@@ -42,12 +42,8 @@ class CSVParser(BaseParser):
         text_list = []
         with open(file, "r") as fp:
             csv_reader = csv.reader(fp)
-            for row in csv_reader:
-                text_list.append(", ".join(row))
-        if self._concat_rows:
-            return "\n".join(text_list)
-        else:
-            return text_list
+            text_list.extend(", ".join(row) for row in csv_reader)
+        return "\n".join(text_list) if self._concat_rows else text_list
 
 
 class PandasCSVParser(BaseParser):
@@ -109,7 +105,4 @@ class PandasCSVParser(BaseParser):
             lambda row: (self._col_joiner).join(row.astype(str).tolist()), axis=1
         ).tolist()
 
-        if self._concat_rows:
-            return (self._row_joiner).join(text_list)
-        else:
-            return text_list
+        return (self._row_joiner).join(text_list) if self._concat_rows else text_list

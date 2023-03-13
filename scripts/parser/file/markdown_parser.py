@@ -45,10 +45,9 @@ class MarkdownParser(BaseParser):
         current_text = ""
 
         for line in lines:
-            header_match = re.match(r"^#+\s", line)
-            if header_match:
+            if header_match := re.match(r"^#+\s", line):
                 if current_header is not None:
-                    if current_text == "" or None:
+                    if current_text == "":
                         continue
                     markdown_tups.append((current_header, current_text))
 
@@ -58,24 +57,22 @@ class MarkdownParser(BaseParser):
                 current_text += line + "\n"
         markdown_tups.append((current_header, current_text))
 
-        if current_header is not None:
-            # pass linting, assert keys are defined
-            markdown_tups = [
-                (re.sub(r"#", "", cast(str, key)).strip(), re.sub(r"<.*?>", "", value))
+        return (
+            [
+                (
+                    re.sub(r"#", "", cast(str, key)).strip(),
+                    re.sub(r"<.*?>", "", value),
+                )
                 for key, value in markdown_tups
             ]
-        else:
-            markdown_tups = [
-                (key, re.sub("\n", "", value)) for key, value in markdown_tups
-            ]
-
-        return markdown_tups
+            if current_header is not None
+            else [(key, re.sub("\n", "", value)) for key, value in markdown_tups]
+        )
 
     def remove_images(self, content: str) -> str:
         """Get a dictionary of a markdown file from its path."""
         pattern = r"!{1}\[\[(.*)\]\]"
-        content = re.sub(pattern, "", content)
-        return content
+        return re.sub(pattern, "", content)
 
     # def remove_tables(self, content: str) -> List[List[str]]:
     #     """Convert markdown tables to nested lists."""
@@ -93,8 +90,7 @@ class MarkdownParser(BaseParser):
     def remove_hyperlinks(self, content: str) -> str:
         """Get a dictionary of a markdown file from its path."""
         pattern = r"\[(.*?)\]\((.*?)\)"
-        content = re.sub(pattern, r"\1", content)
-        return content
+        return re.sub(pattern, r"\1", content)
 
     def _init_parser(self) -> Dict:
         """Initialize the parser with the config."""
@@ -110,10 +106,7 @@ class MarkdownParser(BaseParser):
             content = self.remove_hyperlinks(content)
         if self._remove_images:
             content = self.remove_images(content)
-        # if self._remove_tables:
-        #     content = self.remove_tables(content)
-        markdown_tups = self.markdown_to_tups(content)
-        return markdown_tups
+        return self.markdown_to_tups(content)
 
     def parse_file(
         self, filepath: Path, errors: str = "ignore"
