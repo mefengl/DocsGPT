@@ -59,20 +59,18 @@ def call_openai_api():
 
 def get_user_permission():
 # Function to ask user permission to call the OpenAI api and spend their OpenAI funds.
-    # Here we convert the docs list to a string and calculate the number of OpenAI tokens the string represents.
-    docs_content = (" ".join(docs))
-    tokens, total_price = num_tokens_from_string(string=docs_content, encoding_name="cl100k_base")
-    # Here we print the number of tokens and the approx user cost with some visually appealing formatting.
-    print(f"Number of Tokens = {format(tokens, ',d')}")
-    print(f"Approx Cost = ${format(total_price, ',.2f')}")
-    #Here we check for user permission before calling the API.
-    user_input = input("Price Okay? (Y/N) \n").lower()
-    if user_input == "y":
-        call_openai_api()
-    elif user_input == "":
-        call_openai_api()
-    else:
-        print("The API was not called. No money was spent.")
+  # Here we convert the docs list to a string and calculate the number of OpenAI tokens the string represents.
+  docs_content = (" ".join(docs))
+  tokens, total_price = num_tokens_from_string(string=docs_content, encoding_name="cl100k_base")
+  # Here we print the number of tokens and the approx user cost with some visually appealing formatting.
+  print(f"Number of Tokens = {format(tokens, ',d')}")
+  print(f"Approx Cost = ${format(total_price, ',.2f')}")
+  #Here we check for user permission before calling the API.
+  user_input = input("Price Okay? (Y/N) \n").lower()
+  if user_input in ["y", ""]:
+    call_openai_api()
+  else:
+    print("The API was not called. No money was spent.")
 
 ap = ArgumentParser("Script for training DocsGPT on Sphinx documentation")
 ap.add_argument("-i", "--inputs",
@@ -91,7 +89,7 @@ dst_dir = "tmp"
 convert_rst_to_txt(src_dir, dst_dir)
 
 # Here we load in the data in the format that Notion exports it in.
-ps = list(Path("tmp/"+ src_dir).glob("**/*.txt"))
+ps = list(Path(f"tmp/{src_dir}").glob("**/*.txt"))
 
 # parse all child directories
 data = []

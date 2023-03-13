@@ -28,16 +28,11 @@ class EpubParser(BaseParser):
         except ImportError:
             raise ValueError("`html2text` is required to parse Epub files.")
 
-        text_list = []
         book = epub.read_epub(file, options={"ignore_ncx": True})
 
-        # Iterate through all chapters.
-        for item in book.get_items():
-            # Chapters are typically located in epub documents items.
-            if item.get_type() == ebooklib.ITEM_DOCUMENT:
-                text_list.append(
-                    html2text.html2text(item.get_content().decode("utf-8"))
-                )
-
-        text = "\n".join(text_list)
-        return text
+        text_list = [
+            html2text.html2text(item.get_content().decode("utf-8"))
+            for item in book.get_items()
+            if item.get_type() == ebooklib.ITEM_DOCUMENT
+        ]
+        return "\n".join(text_list)

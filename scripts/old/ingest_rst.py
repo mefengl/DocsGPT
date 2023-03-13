@@ -34,9 +34,7 @@ def get_user_permission():
     print(f"Approx Cost = ${format(total_price, ',.2f')}")
     #Here we check for user permission before calling the API.
     user_input = input("Price Okay? (Y/N) \n").lower()
-    if user_input == "y":
-        call_openai_api()
-    elif user_input == "":
+    if user_input in ["y", ""]:
         call_openai_api()
     else:
         print("The API was not called. No money was spent.")

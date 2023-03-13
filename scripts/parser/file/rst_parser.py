@@ -57,7 +57,7 @@ class RstParser(BaseParser):
             header_match = re.match(r"^[^\S\n]*[-=]+[^\S\n]*$", line)
             if header_match and i > 0 and (len(lines[i - 1].strip()) == len(header_match.group().strip()) or lines[i - 2] == lines[i - 2]):
                 if current_header is not None:
-                    if current_text == "" or None:
+                    if current_text == "":
                         continue
                     # removes the next heading from current Document
                     if current_text.endswith(lines[i - 1] + "\n"):
@@ -91,31 +91,26 @@ class RstParser(BaseParser):
 
     def remove_images(self, content: str) -> str:
         pattern = r"\.\. image:: (.*)"
-        content = re.sub(pattern, "", content)
-        return content
+        return re.sub(pattern, "", content)
 
     def remove_hyperlinks(self, content: str) -> str:
         pattern = r"`(.*?) <(.*?)>`_"
-        content = re.sub(pattern, r"\1", content)
-        return content
+        return re.sub(pattern, r"\1", content)
 
     def remove_directives(self, content: str) -> str:
         """Removes reStructuredText Directives"""
         pattern = r"`\.\.([^:]+)::"
-        content = re.sub(pattern, "", content)
-        return content
+        return re.sub(pattern, "", content)
 
     def remove_interpreters(self, content: str) -> str:
         """Removes reStructuredText Interpreted Text Roles"""
         pattern = r":(\w+):"
-        content = re.sub(pattern, "", content)
-        return content
+        return re.sub(pattern, "", content)
 
     def remove_table_excess(self, content: str) -> str:
         """Pattern to remove grid table separators"""
         pattern = r"^\+[-]+\+[-]+\+$"
-        content = re.sub(pattern, "", content, flags=re.MULTILINE)
-        return content
+        return re.sub(pattern, "", content, flags=re.MULTILINE)
 
     def remove_whitespaces_excess(self, content: List[Tuple[str, Any]]) -> List[Tuple[str, Any]]:
         """Pattern to match 2 or more consecutive whitespaces"""

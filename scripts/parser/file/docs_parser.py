@@ -35,9 +35,7 @@ class PDFParser(BaseParser):
                 # Extract the text from the page
                 page_text = pdf.pages[page].extract_text()
                 text_list.append(page_text)
-        text = "\n".join(text_list)
-
-        return text
+        return "\n".join(text_list)
 
 
 class DocxParser(BaseParser):
@@ -54,6 +52,4 @@ class DocxParser(BaseParser):
         except ImportError:
             raise ValueError("docx2txt is required to read Microsoft Word files.")
 
-        text = docx2txt.process(file)
-
-        return text
+        return docx2txt.process(file)

@@ -58,23 +58,14 @@ def call_openai_api(docs, folder_name):
     store.save_local(f"outputs/{folder_name}")
 
 def get_user_permission(docs, folder_name):
-# Function to ask user permission to call the OpenAI api and spend their OpenAI funds.
-    # Here we convert the docs list to a string and calculate the number of OpenAI tokens the string represents.
-    #docs_content = (" ".join(docs))
-    docs_content = ""
-    for doc in docs:
-        docs_content += doc.page_content
-
-
+    docs_content = "".join(doc.page_content for doc in docs)
     tokens, total_price = num_tokens_from_string(string=docs_content, encoding_name="cl100k_base")
     # Here we print the number of tokens and the approx user cost with some visually appealing formatting.
     print(f"Number of Tokens = {format(tokens, ',d')}")
     print(f"Approx Cost = ${format(total_price, ',.2f')}")
     #Here we check for user permission before calling the API.
     user_input = input("Price Okay? (Y/N) \n").lower()
-    if user_input == "y":
-        call_openai_api(docs, folder_name)
-    elif user_input == "":
+    if user_input in ["y", ""]:
         call_openai_api(docs, folder_name)
     else:
         print("The API was not called. No money was spent.")

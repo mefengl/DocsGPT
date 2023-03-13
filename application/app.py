@@ -51,15 +51,8 @@ with open("combine_prompt.txt", "r") as f:
 with open("combine_prompt_hist.txt", "r") as f:
     template_hist = f.read()
 
-if os.getenv("API_KEY") is not None:
-    api_key_set = True
-else:
-    api_key_set = False
-if os.getenv("EMBEDDINGS_KEY") is not None:
-    embeddings_key_set = True
-else:
-    embeddings_key_set = False
-
+api_key_set = os.getenv("API_KEY") is not None
+embeddings_key_set = os.getenv("EMBEDDINGS_KEY") is not None
 app = Flask(__name__)
 
 
@@ -74,35 +67,35 @@ def api_answer():
     data = request.get_json()
     question = data["question"]
     history = data["history"]
-    if not api_key_set:
-        api_key = data["api_key"]
-    else:
-        api_key = os.getenv("API_KEY")
-    if not embeddings_key_set:
-        embeddings_key = data["embeddings_key"]
-    else:
-        embeddings_key = os.getenv("EMBEDDINGS_KEY")
-
-
+    api_key = os.getenv("API_KEY") if api_key_set else data["api_key"]
+    embeddings_key = (
+        os.getenv("EMBEDDINGS_KEY")
+        if embeddings_key_set
+        else data["embeddings_key"]
+    )
     # check if the vectorstore is set
-    if "active_docs" in data:
-        vectorstore = "vectors/" + data["active_docs"]
-        if data['active_docs'] == "default":
-            vectorstore = ""
-    else:
+    if (
+        "active_docs" in data
+        and data['active_docs'] == "default"
+        or "active_docs" not in data
+    ):
         vectorstore = ""
-
+    else:
+        vectorstore = "vectors/" + data["active_docs"]
     # loading the index and the store and the prompt template
     # Note if you have used other embeddings than OpenAI, you need to change the embeddings
-    if embeddings_choice == "openai_text-embedding-ada-002":
-        docsearch = FAISS.load_local(vectorstore, OpenAIEmbeddings(openai_api_key=embeddings_key))
-    elif embeddings_choice == "huggingface_sentence-transformers/all-mpnet-base-v2":
-        docsearch = FAISS.load_local(vectorstore, HuggingFaceHubEmbeddings())
-    elif embeddings_choice == "huggingface_hkunlp/instructor-large":
-        docsearch = FAISS.load_local(vectorstore, HuggingFaceInstructEmbeddings())
-    elif embeddings_choice == "cohere_medium":
+    if embeddings_choice == "cohere_medium":
         docsearch = FAISS.load_local(vectorstore, CohereEmbeddings(cohere_api_key=embeddings_key))
 
+    elif embeddings_choice == "huggingface_hkunlp/instructor-large":
+        docsearch = FAISS.load_local(vectorstore, HuggingFaceInstructEmbeddings())
+    elif (
+        embeddings_choice
+        == "huggingface_sentence-transformers/all-mpnet-base-v2"
+    ):
+        docsearch = FAISS.load_local(vectorstore, HuggingFaceHubEmbeddings())
+    elif embeddings_choice == "openai_text-embedding-ada-002":
+        docsearch = FAISS.load_local(vectorstore, OpenAIEmbeddings(openai_api_key=embeddings_key))
     # create a prompt template
     if history:
         history = json.loads(history)
@@ -111,15 +104,15 @@ def api_answer():
     else:
         c_prompt = PromptTemplate(input_variables=["summaries", "question"], template=template)
 
-    if llm_choice == "openai":
-        llm = OpenAI(openai_api_key=api_key, temperature=0)
-    elif llm_choice == "manifest":
-        llm = ManifestWrapper(client=manifest, llm_kwargs={"temperature": 0.001, "max_tokens": 2048})
-    elif llm_choice == "huggingface":
-        llm = HuggingFaceHub(repo_id="bigscience/bloom", huggingfacehub_api_token=api_key)
-    elif llm_choice == "cohere":
+    if llm_choice == "cohere":
         llm = Cohere(model="command-xlarge-nightly", cohere_api_key=api_key)
 
+    elif llm_choice == "huggingface":
+        llm = HuggingFaceHub(repo_id="bigscience/bloom", huggingfacehub_api_token=api_key)
+    elif llm_choice == "manifest":
+        llm = ManifestWrapper(client=manifest, llm_kwargs={"temperature": 0.001, "max_tokens": 2048})
+    elif llm_choice == "openai":
+        llm = OpenAI(openai_api_key=api_key, temperature=0)
     qa_chain = load_qa_chain(llm=llm, chain_type="map_reduce",
                              combine_prompt=c_prompt)
 
@@ -146,25 +139,23 @@ def check_docs():
     # check if docs exist in a vectorstore folder
     data = request.get_json()
     vectorstore = "vectors/" + data["docs"]
-    base_path = 'https://raw.githubusercontent.com/arc53/DocsHUB/main/'
-    #
     if os.path.exists(vectorstore):
         return {"status": 'exists'}
-    else:
-        r = requests.get(base_path + vectorstore + "index.faiss")
-        # save to vectors directory
-        # check if the directory exists
-        if not os.path.exists(vectorstore):
-            os.makedirs(vectorstore)
+    base_path = 'https://raw.githubusercontent.com/arc53/DocsHUB/main/'
+    r = requests.get(base_path + vectorstore + "index.faiss")
+    # save to vectors directory
+    # check if the directory exists
+    if not os.path.exists(vectorstore):
+        os.makedirs(vectorstore)
 
-        with open(vectorstore + "index.faiss", "wb") as f:
-            f.write(r.content)
-        # download the store
-        r = requests.get(base_path + vectorstore + "index.pkl")
-        with open(vectorstore + "index.pkl", "wb") as f:
-            f.write(r.content)
+    with open(f"{vectorstore}index.faiss", "wb") as f:
+        f.write(r.content)
+    # download the store
+    r = requests.get(base_path + vectorstore + "index.pkl")
+    with open(f"{vectorstore}index.pkl", "wb") as f:
+        f.write(r.content)
 
-        return {"status": 'loaded'}
+    return {"status": 'loaded'}
 
 
 # handling CORS
